@@ -8,7 +8,6 @@ class HashMap {
     }
 
     hash(key) {
-
         let hashCode = 0;
 
         const primeNumber = 31;
@@ -25,12 +24,13 @@ class HashMap {
 
     get keys() {
         let keys = [];
-        for (const key in this.array) {
-            if (this.array[key] && this.array[key].key) {
-                keys.push(this.array[key].key);
-            } else if (this.array[key] instanceof LinkedList == true) {
-                for (let i = 0; i < this.array[key].size; i++) {
-                    keys.push(this.array[key].at(i).key);
+        for (const bucket in this.array) {
+            const node = this.array[bucket];
+            if (node && node.key) {
+                keys.push(node.key);
+            } else if (node instanceof LinkedList) {
+                for (let i = 0; i < node.size; i++) {
+                    keys.push(node.at(i).key);
                 }
             }
         }
@@ -39,11 +39,12 @@ class HashMap {
 
     get values() {
         let values = [];
-        for (const key in this.array) {
-            if (this.array[key] && this.array[key].value) {
-                values.push(this.array[key].value);
-            } else if (this.array[key] instanceof LinkedList == true) {
-                let current = this.array[key].head;
+        for (const bucket in this.array) {
+            const node = this.array[bucket];
+            if (node && node.value) {
+                values.push(node.value);
+            } else if (node instanceof LinkedList) {
+                let current = node.head;
                 while (current) {
                     values.push(current.value);
                     current = current.nextNode;
@@ -57,15 +58,17 @@ class HashMap {
         const hash = this.hash(key);
         const bucket = hash % this.capacity;
 
-        if (this.array[bucket] && this.array[bucket] instanceof LinkedList == false) {
+        let node = this.array[bucket];
+
+        if (node && node instanceof LinkedList == false) {
             this.array[bucket] = null;
             this.count--;
             return true;
-        } else if (this.array[bucket] && this.array[bucket] instanceof LinkedList == true) {
-            this.array[bucket].remove(key);
+        } else if (node && node instanceof LinkedList) {
+            node.remove(key);
             this.count--;
-            if (this.array[bucket].size == 1) {
-                this.array[bucket] = { key: this.array[bucket].head.key, value: this.array[bucket].head.value };
+            if (node.size == 1) {
+                this.array[bucket] = { key: node.head.key, value: node.head.value };
             }
             return true;
         }
@@ -75,27 +78,29 @@ class HashMap {
     get(key) {
         const hash = this.hash(key);
         const bucket = hash % this.capacity;
-        if (this.array[bucket] instanceof LinkedList == true) {
-            let current = this.array[bucket].head;
+        const node = this.array[bucket];
+        if (node && node instanceof LinkedList) {
+            let current = node.head;
             while (current) {
-                if (current.key == key) return true;
+                if (current.key == key) return current.value;
                 current = current.nextNode;
             }
-        } else {
-            if (this.array[bucket].key == key) {
-                return true;
+        } else if (node) {
+            if (node.key == key) {
+                return node.value;
             }
         }
-        return false;
+        return null;
     }
 
     entries() {
         const arrOfEntries = [];
         for (const bucket in this.array) {
-            if (this.array[bucket] instanceof LinkedList == false && this.array[bucket] != null) {
-                arrOfEntries.push([this.array[bucket].key, this.array[bucket].value]);
-            } else if (this.array[bucket] instanceof LinkedList == true) {
-                let current = this.array[bucket].head;
+            const node = this.array[bucket];
+            if (node instanceof LinkedList == false && node != null) {
+                arrOfEntries.push([node.key, node.value]);
+            } else if (node instanceof LinkedList) {
+                let current = node.head;
                 while (current) {
                     arrOfEntries.push([current.key, current.value]);
                     current = current.nextNode;
@@ -108,13 +113,21 @@ class HashMap {
     entry(key) {
         const hash = this.hash(key);
         const index = hash % this.capacity;
-        if (this.array[index] && this.array[index].key == key) {
-            return true;
-        } else if (this.array[index] && this.array[index.key] != key) {
-            return true;
-        }
 
-        return null;
+        const node = this.array[index];
+
+        if (node && node.key == key) {
+            return true;
+        } else if (node instanceof LinkedList) {
+            let current = node.head;
+            while (current) {
+                if (current.key == key) {
+                    return true;
+                }
+                current = current.nextNode;
+            }
+        }
+        return false;
     }
 
     clear() {
@@ -126,10 +139,12 @@ class HashMap {
     has(key) {
         const hash = this.hash(key);
         const index = hash % this.capacity;
-        if (this.array[index] && this.array[index] instanceof LinkedList == false) {
-            if (this.array[index].key && this.array[index].key == key) return true;
-        } else if (this.array[index] && this.array[index] instanceof LinkedList == true) {
-            let current = this.array[index].head;
+
+        const node = this.array[index];
+        if (node && node instanceof LinkedList == false) {
+            if (node.key && node.key == key) return true;
+        } else if (node && node instanceof LinkedList) {
+            let current = node.head;
             while (current) {
                 if (current.key == key) {
                     return true;
@@ -145,29 +160,33 @@ class HashMap {
             this.capacity *= 2;
             const newArray = [];
             for (const bucket in this.array) {
-                if (this.array[bucket] instanceof LinkedList == false) {
-                    const existingKey = this.array[bucket].key;
-                    const existingValue = this.array[bucket].value;
-                    const hash = this.hash(this.array[bucket].key);
-                    const index = hash % this.capacity;
-                    newArray[index] = { key: existingKey, value: existingValue };
-                } else if (this.array[bucket] instanceof LinkedList == true) {
-                    let current = this.array[bucket].head;
-                    while (current) {
+                const node = this.array[bucket];
+                if (node && node instanceof LinkedList == false) {
 
-                        //}
-                        //for (let i = 0; i < this.array[bucket].size; i++) {
+                    const existingKey = node.key;
+                    const existingValue = node.value;
+
+                    const hash = this.hash(node.key);
+                    const index = hash % this.capacity;
+
+                    newArray[index] = { key: existingKey, value: existingValue };
+                } else if (node && node instanceof LinkedList) {
+                    let current = node.head;
+                    while (current) {
 
                         const hash = this.hash(current.key);
                         const newBucket = hash % this.capacity;
-                        if (newArray[newBucket] && newArray[newBucket].key != current.key) {
+
+                        let node = newArray[newBucket];
+
+                        if (node && node.key != current.key) {
                             const linkedList = new LinkedList();
-                            linkedList.append(newArray[newBucket].key, newArray[newBucket].value);
+                            linkedList.append(node.key, node.value);
                             linkedList.append(current.key, current.value);
 
                             newArray[newBucket] = linkedList;
-                        } else if (newArray[newBucket] instanceof LinkedList == true) {
-                            newArray[newBucket].append(current.key, current.value);
+                        } else if (node instanceof LinkedList) {
+                            node.append(current.key, current.value);
                         } else {
                             newArray[newBucket] = { key: current.key, value: current.value };
                         }
@@ -184,32 +203,33 @@ class HashMap {
     // }
 
     set(key, value) {
+        const hash = this.hash(key);
+        const index = hash % this.capacity;
+
+        let node = this.array[index];
         if (!this.entry(key)) {
             this.resize();
-            const hash = this.hash(key);
-            const index = hash % this.capacity;
             this.array[index] = { key: key, value: value };
             this.count++;
         } else {
-            const hash = this.hash(key);
-            const index = hash % this.capacity;
-            if (this.array[index].key && this.array[index].key == key) {
-                this.array[index].value = value;
-            } else if (this.array[index].key && this.array[index].key != key) {
+            if (node && node.key && node.key == key) {
+                node.value = value;
+            } else if (node.key && node.key != key) {
                 const linkedList = new LinkedList();
 
-                linkedList.append(this.array[index].key, this.array[index].value);
+                linkedList.append(node.key, node.value);
                 linkedList.append(key, value);
 
                 this.array[index] = linkedList;
                 this.count++;
-            } else if (this.array[index] instanceof LinkedList == true) {
-                let current = this.array[index].head;
+            } else if (node instanceof LinkedList) {
+                let current = node.head;
+
                 let i = 0;
                 let isAnEntry = false;
                 while (current) {
                     if (current.key == key) {
-                        this.array[index].insertAt(key, value, i);
+                        node.insertAt(key, value, i);
                         isAnEntry = true;
                         break;
                     }
@@ -217,7 +237,7 @@ class HashMap {
                     current = current.nextNode;
                 }
                 if (isAnEntry == false) {
-                    this.array[index].append(key, value);
+                    node.append(key, value);
                     this.resize();
                     this.count++;
                 }
