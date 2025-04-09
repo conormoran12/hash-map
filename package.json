@@ -1,0 +1,21 @@
+{
+  "name": "hash-map",
+  "version": "1.0.0",
+  "main": "hash-map.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/conormoran12/hash-map.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/conormoran12/hash-map/issues"
+  },
+  "homepage": "https://github.com/conormoran12/hash-map#readme",
+  "description": ""
+}
